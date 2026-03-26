@@ -111,8 +111,6 @@ HTML = """
   td.tc { text-align: center; }
 
   /* Column widths */
-  .col-pos     { width: 38px; }
-  .col-type    { width: 80px; }
   .col-company { min-width: 160px; }
   .col-url     { min-width: 180px; }
   .col-email   { min-width: 200px; }
@@ -172,12 +170,6 @@ HTML = """
 
   <div id="controls" style="display:none">
     <div class="toolbar">
-      <label>Type:</label>
-      <select id="type-filter" onchange="renderTable()">
-        <option value="all">All types</option>
-        <option value="text">Text ads</option>
-        <option value="product">Product ads</option>
-      </select>
       <label>Keyword:</label>
       <select id="kw-filter" onchange="renderTable()">
         <option value="all">All keywords</option>
@@ -376,12 +368,10 @@ function addToKwFilter(kw) {
 
 // ---- Table ----
 function renderTable() {
-  const typeFilter = document.getElementById('type-filter').value;
-  const kwFilter   = document.getElementById('kw-filter').value;
+  const kwFilter = document.getElementById('kw-filter').value;
 
   let ads = currentAds;
-  if (typeFilter !== 'all') ads = ads.filter(a => a.ad_type === typeFilter);
-  if (kwFilter   !== 'all') ads = ads.filter(a => a.keyword === kwFilter);
+  if (kwFilter !== 'all') ads = ads.filter(a => a.keyword === kwFilter);
 
   // Deduplicate by company name — keep first occurrence of each advertiser
   const seenCompanies = new Set();
@@ -402,10 +392,6 @@ function renderTable() {
   }
 
   const rows = ads.map((ad, rowIdx) => {
-    const badge = ad.ad_type === 'product'
-      ? '<span class="badge badge-product">product</span>'
-      : '<span class="badge badge-text">text</span>';
-
     const companyCell = ad.click_url
       ? '<a class="company-link" href="' + escAttr(ad.click_url) + '" target="_blank" rel="noopener">'
           + escHtml(ad.advertiser || '\u2014') + '</a>'
@@ -414,24 +400,12 @@ function renderTable() {
     const urlCell = ad.display_url
       ? '<span class="display-url">' + escHtml(ad.display_url) + '</span>' : '';
 
-    const headline  = '<span class="headline">' + escHtml(ad.headline) + '</span>';
-    const price     = ad.price       ? '<span class="price">' + escHtml(ad.price) + '</span>' : '';
-    const desc      = ad.description ? '<span class="desc">'  + escHtml(ad.description) + '</span>' : '';
-    const sitelinks = ad.sitelinks && ad.sitelinks.length
-      ? '<div class="sitelinks">' + ad.sitelinks.map(s =>
-          '<span class="sitelink">' + escHtml(s.text) + '</span>').join('') + '</div>'
-      : '';
-
     const cached = currentEnrichment[ad._uid];
     const spinner = '<span class="spinner-sm"></span>';
-    const emailInner = cached !== undefined
-      ? renderEmails(cached) : spinner;
-    const phoneInner = cached !== undefined
-      ? renderPhones(cached) : spinner;
+    const emailInner = cached !== undefined ? renderEmails(cached) : spinner;
+    const phoneInner = cached !== undefined ? renderPhones(cached) : spinner;
 
     return '<tr>'
-      + '<td class="tc col-pos"><span class="pos-num">' + (rowIdx + 1) + '</span></td>'
-      + '<td class="col-type">' + badge + '</td>'
       + '<td class="col-company">' + companyCell + '</td>'
       + '<td class="col-url">' + urlCell + '</td>'
       + '<td class="col-email" id="contact-email-' + ad._uid + '">' + emailInner + '</td>'
@@ -442,12 +416,10 @@ function renderTable() {
   document.getElementById('results').innerHTML =
     '<div class="tbl-wrap"><table>'
     + '<thead><tr>'
-    + '<th class="col-pos">#</th>'
-    + '<th class="col-type">Type</th>'
-    + '<th class="col-company">Company</th>'
-    + '<th class="col-url">URL</th>'
-    + '<th class="col-email">Email</th>'
-    + '<th class="col-phone">Phone</th>'
+    + '<th class="col-company">Advertiser</th>'
+    + '<th class="col-url">Display URL</th>'
+    + '<th class="col-email">Emails</th>'
+    + '<th class="col-phone">Phones</th>'
     + '</tr></thead>'
     + '<tbody>' + rows + '</tbody>'
     + '</table></div>';
@@ -530,7 +502,10 @@ def scrape():
     if not query:
         return jsonify({"error": "query is required"}), 400
 
-    ad_htmls = fetch_ad_html(query, headless=False)
+    try:
+        ad_htmls = fetch_ad_html(query, headless=False)
+    except Exception as e:
+        return jsonify({"error": f"Scraper error: {e}"}), 500
 
     if not ad_htmls:
         return jsonify({"error": "No ads found — page may not have loaded."}), 502

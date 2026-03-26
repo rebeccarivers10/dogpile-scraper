@@ -44,13 +44,20 @@ def fetch_ad_html(query: str, headless: bool = True, cf_timeout: int = 30) -> li
 
         # Step 1: load homepage and bypass Cloudflare
         print("Loading Dogpile homepage...", file=sys.stderr)
-        page.goto(HOMEPAGE, wait_until="load", timeout=45000)
+        try:
+            page.goto(HOMEPAGE, wait_until="load", timeout=45000)
+        except Exception as e:
+            print(f"Warning: goto failed: {e}", file=sys.stderr)
 
         print("Bypassing Cloudflare...", file=sys.stderr)
         deadline = time.time() + cf_timeout
         loaded = False
         while time.time() < deadline:
-            title = page.title()
+            try:
+                title = page.title()
+            except Exception:
+                time.sleep(0.5)
+                continue
             if "dogpile" in title.lower() and "moment" not in title.lower() and "attention" not in title.lower():
                 loaded = True
                 print(f"Homepage loaded: {title}", file=sys.stderr)
@@ -58,7 +65,11 @@ def fetch_ad_html(query: str, headless: bool = True, cf_timeout: int = 30) -> li
             time.sleep(0.5)
 
         if not loaded:
-            print(f"Warning: Cloudflare did not pass within {cf_timeout}s. Title: {page.title()}", file=sys.stderr)
+            try:
+                current_title = page.title()
+            except Exception:
+                current_title = "unavailable"
+            print(f"Warning: Cloudflare did not pass within {cf_timeout}s. Title: {current_title}", file=sys.stderr)
             browser.close()
             return []
 
