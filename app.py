@@ -459,14 +459,13 @@ function exportJSON() {
 }
 
 function exportCSV() {
-  const fields = ['keyword','position','ad_type','advertiser','display_url','headline','price','description','click_url','sitelinks','emails','phones'];
+  const fields = ['advertiser','display_url','emails','phones'];
   const rows = [fields.join(',')];
   for (const ad of currentAds) {
     const enrich = currentEnrichment[ad._uid] || {};
     rows.push(fields.map(f => {
       let v;
-      if (f === 'sitelinks') v = (ad.sitelinks||[]).map(s=>s.text).join(' | ');
-      else if (f === 'emails') v = (enrich.emails||[]).join(' | ');
+      if (f === 'emails') v = (enrich.emails||[]).join(' | ');
       else if (f === 'phones') v = (enrich.phones||[]).join(' | ');
       else v = ad[f] || '';
       return '"' + String(v).replace(/"/g,'""') + '"';
