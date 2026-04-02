@@ -272,7 +272,7 @@ def save_json(ads: list[dict], query: str, filepath: str) -> None:
 
 
 def save_csv(ads: list[dict], filepath: str) -> None:
-    fieldnames = ["position", "ad_type", "advertiser", "display_url", "headline", "price", "description", "click_url", "sitelinks"]
+    fieldnames = ["advertiser", "display_url"]
     with open(filepath, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames, extrasaction="ignore")
         writer.writeheader()
