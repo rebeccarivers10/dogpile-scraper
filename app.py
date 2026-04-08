@@ -111,6 +111,7 @@ HTML = """
   td.tc { text-align: center; }
 
   /* Column widths */
+  .col-keyword { min-width: 140px; }
   .col-company { min-width: 160px; }
   .col-url     { min-width: 180px; }
   .col-email   { min-width: 200px; }
@@ -406,6 +407,7 @@ function renderTable() {
     const phoneInner = cached !== undefined ? renderPhones(cached) : spinner;
 
     return '<tr>'
+      + '<td class="col-keyword"><span class="kw-badge">' + escHtml(ad.keyword || '') + '</span></td>'
       + '<td class="col-company">' + companyCell + '</td>'
       + '<td class="col-url">' + urlCell + '</td>'
       + '<td class="col-email" id="contact-email-' + ad._uid + '">' + emailInner + '</td>'
@@ -416,6 +418,7 @@ function renderTable() {
   document.getElementById('results').innerHTML =
     '<div class="tbl-wrap"><table>'
     + '<thead><tr>'
+    + '<th class="col-keyword">Keyword</th>'
     + '<th class="col-company">Advertiser</th>'
     + '<th class="col-url">Display URL</th>'
     + '<th class="col-email">Emails</th>'
@@ -459,7 +462,7 @@ function exportJSON() {
 }
 
 function exportCSV() {
-  const fields = ['advertiser','display_url','emails','phones'];
+  const fields = ['keyword','advertiser','display_url','emails','phones'];
   const rows = [fields.join(',')];
   for (const ad of currentAds) {
     const enrich = currentEnrichment[ad._uid] || {};
